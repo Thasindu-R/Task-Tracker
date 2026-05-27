@@ -14,7 +14,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         <Navbar />
         <div className="flex">
           <Sidebar />
-          <main className="flex-1 px-6 py-8">{children}</main>
+          <main className="flex-1 px-6 py-8 md:pl-56">{children}</main>
         </div>
       </div>
     </QueryClientProvider>

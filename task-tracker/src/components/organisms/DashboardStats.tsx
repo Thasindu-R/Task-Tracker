@@ -1,44 +1,88 @@
 'use client'
 
-import { STATUSES } from '@/types'
-import { useTasksQuery } from '@/hooks/useTasks'
+import * as React from 'react'
+import { ClipboardList, Loader2, CheckCircle2, AlertCircle, Calendar } from 'lucide-react'
+import type { Task } from '@/types'
+import { formatDate } from '@/lib/utils'
 
-export function DashboardStats() {
-  const { data } = useTasksQuery({})
-  const tasks = data ?? []
+export type DashboardStatsProps = {
+  stats: {
+    todo: number
+    inProgress: number
+    done: number
+    overdue: number
+  }
+  overdueTasks: Task[]
+}
 
-  const total = tasks.length
-  const done = tasks.filter((task) => task.status === 'DONE').length
-  const completionRate = total > 0 ? Math.round((done / total) * 100) : 0
-
-  const counts = STATUSES.reduce(
-    (acc, status) => {
-      acc[status] = tasks.filter((task) => task.status === status).length
-      return acc
+export function DashboardStats({ stats, overdueTasks }: DashboardStatsProps) {
+  const cards = [
+    {
+      label: 'To Do',
+      value: stats.todo,
+      icon: ClipboardList,
+      color: 'text-slate-600',
+      bgColor: 'bg-slate-100',
     },
-    {} as Record<string, number>,
-  )
+    {
+      label: 'In Progress',
+      value: stats.inProgress,
+      icon: Loader2,
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-100',
+    },
+    {
+      label: 'Done',
+      value: stats.done,
+      icon: CheckCircle2,
+      color: 'text-emerald-600',
+      bgColor: 'bg-emerald-100',
+    },
+    {
+      label: 'Overdue',
+      value: stats.overdue,
+      icon: AlertCircle,
+      color: 'text-rose-600',
+      bgColor: 'bg-rose-100',
+    },
+  ]
 
   return (
-    <section className="grid gap-4 md:grid-cols-3">
-      <div className="rounded-2xl border border-border bg-card p-4">
-        <p className="text-xs uppercase tracking-wide text-muted-foreground">
-          Total tasks
-        </p>
-        <p className="mt-2 text-2xl font-semibold">{total}</p>
+    <div className="space-y-8">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        {cards.map((card) => (
+          <div key={card.label} className="flex flex-col gap-3 rounded-xl border border-border bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${card.bgColor} ${card.color}`}>
+                <card.icon className="h-5 w-5" aria-hidden="true" />
+              </div>
+              <h3 className="text-sm font-medium text-slate-600">{card.label}</h3>
+            </div>
+            <p className="text-3xl font-bold text-slate-900">{card.value}</p>
+          </div>
+        ))}
       </div>
-      <div className="rounded-2xl border border-border bg-card p-4">
-        <p className="text-xs uppercase tracking-wide text-muted-foreground">
-          Completion rate
-        </p>
-        <p className="mt-2 text-2xl font-semibold">{completionRate}%</p>
+
+      <div className="rounded-xl border border-border bg-white p-6 shadow-sm">
+        <h3 className="mb-4 text-lg font-semibold text-slate-900">Overdue Tasks</h3>
+        {overdueTasks.length > 0 ? (
+          <ul className="divide-y divide-border">
+            {overdueTasks.map((task) => (
+              <li key={task.id} className="flex items-center justify-between py-3">
+                <span className="font-medium text-slate-700">{task.title}</span>
+                <span className="inline-flex items-center gap-1 text-sm text-rose-600">
+                  <Calendar className="h-4 w-4" aria-hidden="true" />
+                  {formatDate(task.dueDate)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div className="flex items-center justify-center rounded-lg border border-dashed border-emerald-200 bg-emerald-50 p-8 text-emerald-700">
+            No overdue tasks 🎉
+          </div>
+        )}
       </div>
-      <div className="rounded-2xl border border-border bg-card p-4">
-        <p className="text-xs uppercase tracking-wide text-muted-foreground">
-          In progress
-        </p>
-        <p className="mt-2 text-2xl font-semibold">{counts.IN_PROGRESS ?? 0}</p>
-      </div>
-    </section>
+    </div>
   )
 }

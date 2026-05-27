@@ -1,140 +1,61 @@
 'use client'
 
 import * as React from 'react'
-import {
-  DndContext,
-  type DragEndEvent,
-  useDraggable,
-  useDroppable,
-} from '@dnd-kit/core'
-import { CSS } from '@dnd-kit/utilities'
-import type { Priority, Status, Task } from '@/types'
-import { STATUSES } from '@/types'
+import type { Task, Status } from '@/types'
 import { TaskCard } from '@/components/molecules/TaskCard'
-import { useDeleteTask, useTasksQuery, useUpdateTask } from '@/hooks/useTasks'
+import { STATUS_LABELS, STATUS_STYLES } from '@/lib/utils'
+import { useAuth } from '@/hooks/useAuth'
 
 export type TaskBoardProps = {
-  status?: Status
-  priority?: Priority
-  search?: string
-  onEdit?: (task: Task) => void
+  tasks: Task[]
+  onEdit: (task: Task) => void
+  onDelete: (id: string) => void
+  onStatusChange: (id: string, status: Status) => void
 }
 
-function Column({
-  id,
-  title,
-  children,
-}: {
-  id: Status
-  title: string
-  children: React.ReactNode
-}) {
-  const { isOver, setNodeRef } = useDroppable({ id })
+const COLUMNS: Status[] = ['TODO', 'IN_PROGRESS', 'DONE']
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function TaskBoard({ tasks, onEdit, onDelete, onStatusChange }: TaskBoardProps) {
+  const { user } = useAuth()
 
   return (
-    <section
-      ref={setNodeRef}
-      className={
-        'flex min-h-[220px] flex-col gap-3 rounded-2xl border border-border bg-muted/40 p-4 transition-colors ' +
-        (isOver ? 'bg-muted' : '')
-      }
-    >
-      <header className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-      </header>
-      <div className="flex flex-1 flex-col gap-3">{children}</div>
-    </section>
-  )
-}
+    <div className="flex flex-col gap-6 md:flex-row md:items-start">
+      {COLUMNS.map((status) => {
+        const columnTasks = tasks.filter((t) => t.status === status)
 
-function DraggableTask({
-  task,
-  onEdit,
-  onDelete,
-}: {
-  task: Task
-  onEdit?: (task: Task) => void
-  onDelete?: (task: Task) => void
-}) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } =
-    useDraggable({
-      id: task.id,
-      data: { status: task.status },
-    })
+        return (
+          <div key={status} className="flex-1 flex-col gap-4 flex min-w-[300px]">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className={`rounded-full px-3 py-1 text-xs font-semibold border ${STATUS_STYLES[status]}`}>
+                  {STATUS_LABELS[status]}
+                </span>
+                <span className="text-xs font-medium text-slate-500">{columnTasks.length}</span>
+              </div>
+            </div>
 
-  const style: React.CSSProperties = {
-    transform: CSS.Translate.toString(transform),
-    opacity: isDragging ? 0.7 : 1,
-  }
-
-  return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <TaskCard task={task} onEdit={onEdit} onDelete={onDelete} />
+            <div className="flex flex-col gap-3">
+              {columnTasks.length > 0 ? (
+                columnTasks.map((task) => (
+                  <div key={task.id}>
+                    <TaskCard
+                      task={task}
+                      user={user}
+                      onEdit={onEdit}
+                      onDelete={(t) => onDelete(t.id)}
+                    />
+                  </div>
+                ))
+              ) : (
+                <div className="flex h-32 items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 text-sm text-slate-500">
+                  No tasks here yet
+                </div>
+              )}
+            </div>
+          </div>
+        )
+      })}
     </div>
-  )
-}
-
-export function TaskBoard({
-  status,
-  priority,
-  search,
-  onEdit,
-}: TaskBoardProps) {
-  const { data } = useTasksQuery({ status, priority })
-  const updateTask = useUpdateTask()
-  const deleteTask = useDeleteTask()
-
-  const tasks = React.useMemo(() => {
-    if (!data) return []
-    if (!search) return data
-    const lowered = search.toLowerCase()
-    return data.filter(
-      (task) =>
-        task.title.toLowerCase().includes(lowered) ||
-        (task.description ?? '').toLowerCase().includes(lowered),
-    )
-  }, [data, search])
-
-  const grouped = React.useMemo(() => {
-    return STATUSES.reduce(
-      (acc, current) => {
-        acc[current] = tasks.filter((task) => task.status === current)
-        return acc
-      },
-      {} as Record<Status, Task[]>,
-    )
-  }, [tasks])
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event
-    if (!over) return
-
-    const newStatus = over.id as Status
-    const task = tasks.find((item) => item.id === active.id)
-    if (!task || task.status === newStatus) return
-
-    updateTask.mutate({
-      id: task.id,
-      data: { status: newStatus },
-    })
-  }
-
-  return (
-    <DndContext onDragEnd={handleDragEnd}>
-      <div className="grid gap-4 lg:grid-cols-4">
-        {STATUSES.map((current) => (
-          <Column key={current} id={current} title={current.replace('_', ' ')}>
-            {grouped[current]?.map((task) => (
-              <DraggableTask
-                key={task.id}
-                task={task}
-                onEdit={onEdit}
-                onDelete={(item) => deleteTask.mutate({ id: item.id })}
-              />
-            ))}
-          </Column>
-        ))}
-      </div>
-    </DndContext>
   )
 }

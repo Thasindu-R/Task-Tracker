@@ -1,162 +1,162 @@
 'use client'
 
 import * as React from 'react'
-import * as Dialog from '@radix-ui/react-dialog'
-import { z } from 'zod'
-import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
-import { Button } from '@/components/atoms/Button'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import { X } from 'lucide-react'
 import { FormField } from '@/components/molecules/FormField'
-import { cn } from '@/lib/utils'
-import { PRIORITIES, STATUSES, type Task } from '@/types'
+import { Button } from '@/components/atoms/Button'
 import { useCreateTask, useUpdateTask } from '@/hooks/useTasks'
+import type { Task, Priority } from '@/types'
+import { PRIORITY_LABELS, STATUS_LABELS } from '@/lib/utils'
+
+export type TaskFormProps = {
+  task?: Task
+  onClose: () => void
+  onSuccess: () => void
+}
 
 const taskSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
-  description: z.string().optional(),
-  priority: z.enum(PRIORITIES),
-  status: z.enum(STATUSES),
-  dueDate: z.string().optional(),
+  title: z.string().min(1, 'Title is required').max(100, 'Title is too long'),
+  description: z.string().max(500, 'Description is too long').optional(),
+  priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']),
+  status: z.enum(['TODO', 'IN_PROGRESS', 'DONE', 'CANCELLED']),
+  dueDate: z.string().optional().nullable(),
 })
 
 type TaskFormValues = z.infer<typeof taskSchema>
 
-export type TaskFormProps = {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  task?: Task | null
-}
+export function TaskForm({ task, onClose, onSuccess }: TaskFormProps) {
+  const [error, setError] = React.useState<string | null>(null)
+  const isEditMode = !!task
 
-export function TaskForm({ open, onOpenChange, task }: TaskFormProps) {
-  const createTask = useCreateTask()
-  const updateTask = useUpdateTask()
+  const { mutateAsync: createTask } = useCreateTask()
+  const { mutateAsync: updateTask } = useUpdateTask()
 
-  const form = useForm<TaskFormValues>({
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<TaskFormValues>({
     resolver: zodResolver(taskSchema),
     defaultValues: {
       title: task?.title ?? '',
       description: task?.description ?? '',
       priority: task?.priority ?? 'MEDIUM',
       status: task?.status ?? 'TODO',
-      dueDate: task?.dueDate ? task.dueDate.slice(0, 10) : '',
+      dueDate: task?.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '',
     },
   })
 
-  React.useEffect(() => {
-    form.reset({
-      title: task?.title ?? '',
-      description: task?.description ?? '',
-      priority: task?.priority ?? 'MEDIUM',
-      status: task?.status ?? 'TODO',
-      dueDate: task?.dueDate ? task.dueDate.slice(0, 10) : '',
-    })
-  }, [task, form])
+  const onSubmit = async (data: TaskFormValues) => {
+    setError(null)
+    try {
+      const payload = {
+        ...data,
+        dueDate: data.dueDate ? new Date(data.dueDate).toISOString() : null,
+      }
 
-  const onSubmit = async (values: TaskFormValues) => {
-    const payload = {
-      ...values,
-      dueDate: values.dueDate ? new Date(values.dueDate).toISOString() : null,
+      if (isEditMode) {
+        await updateTask({ id: task.id, data: payload })
+      } else {
+        await createTask(payload)
+      }
+      onSuccess()
+      onClose()
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message || 'Failed to save task')
+      } else {
+        setError('Failed to save task')
+      }
     }
-
-    if (task) {
-      await updateTask.mutateAsync({ id: task.id, data: payload })
-    } else {
-      await createTask.mutateAsync(payload)
-    }
-
-    onOpenChange(false)
   }
 
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-black/40" />
-        <Dialog.Content
-          className={cn(
-            'fixed left-1/2 top-1/2 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-background p-6 shadow-lg',
-          )}
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+      <div className="relative w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
+        <button
+          onClick={onClose}
+          className="absolute right-4 top-4 rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+          aria-label="Close modal"
         >
-          <Dialog.Title className="text-lg font-semibold">
-            {task ? 'Edit task' : 'Create task'}
-          </Dialog.Title>
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="mt-4 flex flex-col gap-4"
-          >
-            <FormField
-              label="Title"
-              name="title"
-              placeholder="Write a task title"
-              error={form.formState.errors.title?.message}
-              {...form.register('title')}
+          <X className="h-5 w-5" aria-hidden="true" />
+        </button>
+
+        <h2 className="mb-6 text-xl font-semibold text-slate-900">
+          {isEditMode ? 'Edit Task' : 'New Task'}
+        </h2>
+
+        {error ? (
+          <div className="mb-4 rounded-lg bg-rose-50 p-3 text-sm text-rose-600">
+            {error}
+          </div>
+        ) : null}
+
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 flex flex-col">
+          <FormField
+            label="Title"
+            {...register('title')}
+            error={errors.title?.message}
+            placeholder="What needs to be done?"
+          />
+
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium leading-none text-foreground">Description</label>
+            <textarea
+              {...register('description')}
+              className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm transition-shadow placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/20"
+              placeholder="Add some details..."
             />
-            <FormField
-              label="Description"
-              name="description"
-              placeholder="Optional details"
-              error={form.formState.errors.description?.message}
-              {...form.register('description')}
-            />
+            {errors.description?.message ? (
+              <p className="text-xs text-rose-500">{errors.description.message}</p>
+            ) : null}
+          </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium" htmlFor="priority">
-                  Priority
-                </label>
-                <select
-                  id="priority"
-                  className="h-10 rounded-md border border-input bg-background px-3 text-sm"
-                  {...form.register('priority')}
-                >
-                  {PRIORITIES.map((value) => (
-                    <option key={value} value={value}>
-                      {value}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium" htmlFor="status">
-                  Status
-                </label>
-                <select
-                  id="status"
-                  className="h-10 rounded-md border border-input bg-background px-3 text-sm"
-                  {...form.register('status')}
-                >
-                  {STATUSES.map((value) => (
-                    <option key={value} value={value}>
-                      {value.replace('_', ' ')}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <FormField
-              label="Due date"
-              name="dueDate"
-              type="date"
-              error={form.formState.errors.dueDate?.message}
-              {...form.register('dueDate')}
-            />
-
-            <div className="flex items-center justify-end gap-2">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => onOpenChange(false)}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium leading-none text-foreground">Priority</label>
+              <select
+                {...register('priority')}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/20"
               >
-                Cancel
-              </Button>
-              <Button type="submit" isLoading={form.formState.isSubmitting}>
-                {task ? 'Save' : 'Create'}
-              </Button>
+                {['LOW', 'MEDIUM', 'HIGH', 'URGENT'].map((p) => (
+                  <option key={p} value={p}>{PRIORITY_LABELS[p as Priority]}</option>
+                ))}
+              </select>
             </div>
-          </form>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium leading-none text-foreground">Status</label>
+              <select
+                {...register('status')}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/20"
+              >
+                {['TODO', 'IN_PROGRESS', 'DONE', 'CANCELLED'].map((s) => (
+                  <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <FormField
+            label="Due Date"
+            type="date"
+            {...register('dueDate')}
+            error={errors.dueDate?.message}
+          />
+
+          <div className="mt-6 flex justify-end gap-3">
+            <Button type="button" variant="ghost" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" isLoading={isSubmitting} className="bg-violet-600 hover:bg-violet-700 text-white">
+              {isEditMode ? 'Save Changes' : 'Create Task'}
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
   )
 }
