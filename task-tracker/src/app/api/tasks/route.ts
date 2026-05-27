@@ -1,6 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { z } from 'zod'
-import type { Task as PrismaTask, User as PrismaUser } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { createServerClient } from '@/lib/supabase'
 import { PRIORITIES, STATUSES, type Task } from '@/types'
@@ -26,7 +25,19 @@ function json<T>(data: T | null, error: string | null, status = 200) {
   return NextResponse.json<ApiResponse<T>>({ data, error }, { status })
 }
 
-function serializeTask(task: PrismaTask): Task {
+type PrismaTaskShape = {
+  id: string
+  title: string
+  description: string | null
+  priority: Task['priority']
+  status: Task['status']
+  dueDate: Date | null
+  userId: string
+  createdAt: Date
+  updatedAt: Date
+}
+
+function serializeTask(task: PrismaTaskShape): Task {
   return {
     id: task.id,
     title: task.title,
@@ -42,9 +53,13 @@ function serializeTask(task: PrismaTask): Task {
 
 async function ensureUser(user: {
   id: string
-  email: string
+  email?: string | null
   user_metadata?: Record<string, unknown>
-}): Promise<PrismaUser> {
+}) {
+  if (!user.email) {
+    throw new Error('Missing email for user')
+  }
+
   const avatarUrl =
     typeof user.user_metadata?.avatar_url === 'string'
       ? user.user_metadata.avatar_url
@@ -76,6 +91,10 @@ async function getAuthedUser() {
 
   if (error || !data.user) {
     return { user: null, error: 'Unauthorized' }
+  }
+
+  if (!data.user.email) {
+    return { user: null, error: 'Email missing' }
   }
 
   await ensureUser(data.user)

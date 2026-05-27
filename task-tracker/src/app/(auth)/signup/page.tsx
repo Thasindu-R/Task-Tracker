@@ -39,6 +39,12 @@ export default function SignupPage() {
     },
   })
 
+  const { name: nameName, ...nameField } = form.register('name')
+  const { name: emailName, ...emailField } = form.register('email')
+  const { name: passwordName, ...passwordField } = form.register('password')
+  const { name: confirmName, ...confirmField } =
+    form.register('confirmPassword')
+
   const onSubmit = async (values: SignupValues) => {
     setError(null)
     try {
@@ -62,34 +68,34 @@ export default function SignupPage() {
         <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
           <FormField
             label="Name"
-            name="name"
+            name={nameName}
             placeholder="Your name"
             error={form.formState.errors.name?.message}
-            {...form.register('name')}
+            {...nameField}
           />
           <FormField
             label="Email"
-            name="email"
+            name={emailName}
             type="email"
             placeholder="you@example.com"
             error={form.formState.errors.email?.message}
-            {...form.register('email')}
+            {...emailField}
           />
           <FormField
             label="Password"
-            name="password"
+            name={passwordName}
             type="password"
             placeholder="Create a password"
             error={form.formState.errors.password?.message}
-            {...form.register('password')}
+            {...passwordField}
           />
           <FormField
             label="Confirm password"
-            name="confirmPassword"
+            name={confirmName}
             type="password"
             placeholder="Repeat password"
             error={form.formState.errors.confirmPassword?.message}
-            {...form.register('confirmPassword')}
+            {...confirmField}
           />
 
           {error ? <p className="text-sm text-rose-500">{error}</p> : null}

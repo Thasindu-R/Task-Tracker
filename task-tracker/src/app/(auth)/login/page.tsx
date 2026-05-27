@@ -27,6 +27,9 @@ export default function LoginPage() {
     defaultValues: { email: '', password: '' },
   })
 
+  const { name: emailName, ...emailField } = form.register('email')
+  const { name: passwordName, ...passwordField } = form.register('password')
+
   const onSubmit = async (values: LoginValues) => {
     setError(null)
     try {
@@ -50,19 +53,19 @@ export default function LoginPage() {
         <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
           <FormField
             label="Email"
-            name="email"
+            name={emailName}
             type="email"
             placeholder="you@example.com"
             error={form.formState.errors.email?.message}
-            {...form.register('email')}
+            {...emailField}
           />
           <FormField
             label="Password"
-            name="password"
+            name={passwordName}
             type="password"
             placeholder="Your password"
             error={form.formState.errors.password?.message}
-            {...form.register('password')}
+            {...passwordField}
           />
 
           {error ? <p className="text-sm text-rose-500">{error}</p> : null}
