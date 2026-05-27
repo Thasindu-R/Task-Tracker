@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { createBrowserClient } from '@/lib/supabase'
+import { supabaseBrowserClient } from '@/lib/supabase'
 import { AuthLayout } from '@/components/templates/AuthLayout'
 import { FormField } from '@/components/molecules/FormField'
 import { Button } from '@/components/atoms/Button'
@@ -21,7 +21,7 @@ type LoginFormValues = z.infer<typeof loginSchema>
 export function LoginPage() {
   const router = useRouter()
   const [error, setError] = React.useState<string | null>(null)
-  
+
   const {
     register,
     handleSubmit,
@@ -32,12 +32,11 @@ export function LoginPage() {
 
   const onSubmit = async (data: LoginFormValues) => {
     setError(null)
-    const supabase = createBrowserClient()
-    
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: data.email,
-      password: data.password,
-    })
+    const { error: signInError } =
+      await supabaseBrowserClient.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
+      })
 
     if (signInError) {
       setError(signInError.message)
@@ -52,7 +51,9 @@ export function LoginPage() {
     <AuthLayout>
       <div className="flex flex-col gap-6">
         <div className="text-center">
-          <h2 className="text-2xl font-semibold text-neutral-900">Welcome back</h2>
+          <h2 className="text-2xl font-semibold text-neutral-900">
+            Welcome back
+          </h2>
           <p className="mt-2 text-sm text-neutral-500">
             Enter your details to sign in to your account
           </p>
@@ -79,10 +80,10 @@ export function LoginPage() {
             {...register('password')}
             error={errors.password?.message}
           />
-          
-          <Button 
-            type="submit" 
-            isLoading={isSubmitting} 
+
+          <Button
+            type="submit"
+            isLoading={isSubmitting}
             className="mt-2 w-full bg-violet-600 hover:bg-violet-700 text-white"
           >
             Sign in
@@ -91,7 +92,10 @@ export function LoginPage() {
 
         <p className="text-center text-sm text-neutral-500">
           Don&apos;t have an account?{' '}
-          <Link href="/signup" className="font-medium text-violet-600 hover:text-violet-700 hover:underline">
+          <Link
+            href="/signup"
+            className="font-medium text-violet-600 hover:text-violet-700 hover:underline"
+          >
             Sign up
           </Link>
         </p>

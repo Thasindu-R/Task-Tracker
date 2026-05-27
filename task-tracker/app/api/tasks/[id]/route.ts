@@ -15,19 +15,63 @@ const updateSchema = z.object({
     .transform((val) => (val ? new Date(val) : null)),
 })
 
+async function getAuthenticatedUser(request: NextRequest) {
+  const authorizationHeader = request.headers.get('authorization')
+  const bearerToken = authorizationHeader?.startsWith('Bearer ')
+    ? authorizationHeader.slice('Bearer '.length)
+    : null
+
+  const supabase = await createServerClient()
+  const {
+    data: { user },
+  } = bearerToken
+    ? await supabase.auth.getUser(bearerToken)
+    : await supabase.auth.getUser()
+
+  return user
+}
+
+async function syncUserRecord(user: {
+  id: string
+  email?: string | null
+  user_metadata?: Record<string, unknown>
+}) {
+  if (!user.email) {
+    return
+  }
+
+  await prisma.user.upsert({
+    where: { id: user.id },
+    update: {
+      email: user.email,
+      name:
+        typeof user.user_metadata?.name === 'string'
+          ? user.user_metadata.name
+          : null,
+    },
+    create: {
+      id: user.id,
+      email: user.email,
+      name:
+        typeof user.user_metadata?.name === 'string'
+          ? user.user_metadata.name
+          : null,
+    },
+  })
+}
+
 export async function PUT(
   request: NextRequest,
   props: { params: Promise<{ id: string }> },
 ) {
   try {
-    const supabase = await createServerClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    const user = await getAuthenticatedUser(request)
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    await syncUserRecord(user)
 
     const params = await props.params
     const taskId = params.id
@@ -80,14 +124,13 @@ export async function DELETE(
   props: { params: Promise<{ id: string }> },
 ) {
   try {
-    const supabase = await createServerClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    const user = await getAuthenticatedUser(request)
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    await syncUserRecord(user)
 
     const params = await props.params
     const taskId = params.id

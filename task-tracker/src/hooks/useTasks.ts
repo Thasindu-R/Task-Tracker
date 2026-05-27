@@ -1,6 +1,7 @@
 'use client'
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { getAccessToken } from '@/lib/auth'
 import type { Priority, Status, Task } from '@/types'
 
 export type TaskFilters = {
@@ -21,10 +22,13 @@ type TaskInput = {
 }
 
 async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
+  const accessToken = await getAccessToken()
+
   const response = await fetch(url, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       ...(options?.headers ?? {}),
     },
   })
@@ -41,9 +45,13 @@ async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
   return payload.data
 }
 
-export function useTasksQuery(filters: TaskFilters) {
+export function useTasksQuery(
+  filters: TaskFilters,
+  options?: { enabled?: boolean },
+) {
   return useQuery<Task[]>({
     queryKey: ['tasks', filters],
+    enabled: options?.enabled ?? true,
     queryFn: async () => {
       const params = new URLSearchParams()
       if (filters.status) params.set('status', filters.status)

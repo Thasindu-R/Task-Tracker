@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { createBrowserClient } from '@/lib/supabase'
+import { supabaseBrowserClient } from '@/lib/supabase'
 import type { User } from '@/types'
 
 function mapSupabaseUser(user: {
@@ -24,7 +24,7 @@ function mapSupabaseUser(user: {
 }
 
 export function useAuth() {
-  const supabase = React.useMemo(() => createBrowserClient(), [])
+  const supabase = supabaseBrowserClient
   const [user, setUser] = React.useState<User | null>(null)
   const [loading, setLoading] = React.useState(true)
 

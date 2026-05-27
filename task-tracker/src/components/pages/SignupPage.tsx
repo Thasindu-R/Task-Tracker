@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { createBrowserClient } from '@/lib/supabase'
+import { supabaseBrowserClient } from '@/lib/supabase'
 import { AuthLayout } from '@/components/templates/AuthLayout'
 import { FormField } from '@/components/molecules/FormField'
 import { Button } from '@/components/atoms/Button'
@@ -21,7 +21,7 @@ type SignupFormValues = z.infer<typeof signupSchema>
 export function SignupPage() {
   const [error, setError] = React.useState<string | null>(null)
   const [isSuccess, setIsSuccess] = React.useState(false)
-  
+
   const {
     register,
     handleSubmit,
@@ -32,9 +32,7 @@ export function SignupPage() {
 
   const onSubmit = async (data: SignupFormValues) => {
     setError(null)
-    const supabase = createBrowserClient()
-    
-    const { error: signUpError } = await supabase.auth.signUp({
+    const { error: signUpError } = await supabaseBrowserClient.auth.signUp({
       email: data.email,
       password: data.password,
       options: {
@@ -57,15 +55,32 @@ export function SignupPage() {
       <AuthLayout>
         <div className="flex flex-col items-center justify-center gap-6 text-center">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600">
-            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="32"
+              height="32"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
           </div>
           <div>
-            <h2 className="text-2xl font-semibold text-neutral-900">Check your email</h2>
+            <h2 className="text-2xl font-semibold text-neutral-900">
+              Check your email
+            </h2>
             <p className="mt-2 text-sm text-neutral-500">
               We&apos;ve sent you a verification link to confirm your account.
             </p>
           </div>
-          <Link href="/login" className="mt-4 text-sm font-medium text-violet-600 hover:text-violet-700 hover:underline">
+          <Link
+            href="/login"
+            className="mt-4 text-sm font-medium text-violet-600 hover:text-violet-700 hover:underline"
+          >
             Return to login
           </Link>
         </div>
@@ -77,7 +92,9 @@ export function SignupPage() {
     <AuthLayout>
       <div className="flex flex-col gap-6">
         <div className="text-center">
-          <h2 className="text-2xl font-semibold text-neutral-900">Create an account</h2>
+          <h2 className="text-2xl font-semibold text-neutral-900">
+            Create an account
+          </h2>
           <p className="mt-2 text-sm text-neutral-500">
             Sign up to start tracking your tasks
           </p>
@@ -111,10 +128,10 @@ export function SignupPage() {
             {...register('password')}
             error={errors.password?.message}
           />
-          
-          <Button 
-            type="submit" 
-            isLoading={isSubmitting} 
+
+          <Button
+            type="submit"
+            isLoading={isSubmitting}
             className="mt-2 w-full bg-violet-600 hover:bg-violet-700 text-white"
           >
             Create account
@@ -123,7 +140,10 @@ export function SignupPage() {
 
         <p className="text-center text-sm text-neutral-500">
           Already have an account?{' '}
-          <Link href="/login" className="font-medium text-violet-600 hover:text-violet-700 hover:underline">
+          <Link
+            href="/login"
+            className="font-medium text-violet-600 hover:text-violet-700 hover:underline"
+          >
             Sign in
           </Link>
         </p>

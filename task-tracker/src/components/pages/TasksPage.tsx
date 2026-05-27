@@ -1,17 +1,21 @@
 'use client'
 
 import * as React from 'react'
+import { useRouter } from 'next/navigation'
 import { DashboardLayout } from '@/components/templates/DashboardLayout'
 import { TaskBoard } from '@/components/organisms/TaskBoard'
 import { TaskForm } from '@/components/organisms/TaskForm'
 import { SearchBar } from '@/components/molecules/SearchBar'
 import { Button } from '@/components/atoms/Button'
 import { useTasksQuery, useDeleteTask, useUpdateTask } from '@/hooks/useTasks'
+import { useAuth } from '@/hooks/useAuth'
 import type { Task, Status } from '@/types'
 import { useQueryClient } from '@tanstack/react-query'
 
 export function TasksPage() {
-  const { data: tasks, isLoading } = useTasksQuery({})
+  const router = useRouter()
+  const { user, loading } = useAuth()
+  const { data: tasks, isLoading } = useTasksQuery({}, { enabled: !!user })
   const { mutate: deleteTask } = useDeleteTask()
   const { mutate: updateTask } = useUpdateTask()
   const queryClient = useQueryClient()
@@ -23,8 +27,26 @@ export function TasksPage() {
   const filteredTasks = React.useMemo(() => {
     if (!tasks) return []
     if (!searchQuery) return tasks
-    return tasks.filter((t) => t.title.toLowerCase().includes(searchQuery.toLowerCase()))
+    return tasks.filter((t) =>
+      t.title.toLowerCase().includes(searchQuery.toLowerCase()),
+    )
   }, [tasks, searchQuery])
+
+  React.useEffect(() => {
+    if (!loading && !user) {
+      router.replace('/login')
+    }
+  }, [loading, router, user])
+
+  if (loading || !user) {
+    return (
+      <DashboardLayout>
+        <div className="flex flex-1 items-center justify-center text-sm text-slate-500">
+          Loading tasks...
+        </div>
+      </DashboardLayout>
+    )
+  }
 
   const handleEdit = (task: Task) => {
     setFormTask(task)
@@ -56,9 +78,14 @@ export function TasksPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">Tasks</h1>
-            <p className="text-sm text-slate-500">Manage your tasks across different stages.</p>
+            <p className="text-sm text-slate-500">
+              Manage your tasks across different stages.
+            </p>
           </div>
-          <Button onClick={handleOpenCreate} className="bg-violet-600 hover:bg-violet-700 text-white">
+          <Button
+            onClick={handleOpenCreate}
+            className="bg-violet-600 hover:bg-violet-700 text-white"
+          >
             New Task
           </Button>
         </div>
@@ -70,7 +97,10 @@ export function TasksPage() {
         {isLoading ? (
           <div className="flex gap-6 h-[500px]">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="flex-1 rounded-xl bg-slate-100 animate-pulse" />
+              <div
+                key={i}
+                className="flex-1 rounded-xl bg-slate-100 animate-pulse"
+              />
             ))}
           </div>
         ) : (
@@ -83,10 +113,10 @@ export function TasksPage() {
         )}
 
         {isFormOpen && (
-          <TaskForm 
-            task={formTask} 
-            onClose={() => setIsFormOpen(false)} 
-            onSuccess={handleFormSuccess} 
+          <TaskForm
+            task={formTask}
+            onClose={() => setIsFormOpen(false)}
+            onSuccess={handleFormSuccess}
           />
         )}
       </div>
