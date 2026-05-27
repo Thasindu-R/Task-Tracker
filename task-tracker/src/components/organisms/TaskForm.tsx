@@ -73,20 +73,33 @@ export function TaskForm({ task, onClose, onSuccess }: TaskFormProps) {
     }
   }
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-      <div className="relative w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
-        <button
-          onClick={onClose}
-          className="absolute right-4 top-4 rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
-          aria-label="Close modal"
-        >
-          <X className="h-5 w-5" aria-hidden="true" />
-        </button>
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [onClose])
 
-        <h2 className="mb-6 text-xl font-semibold text-slate-900">
-          {isEditMode ? 'Edit Task' : 'New Task'}
-        </h2>
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-0 sm:p-4 backdrop-blur-sm">
+      <div className="relative flex h-full w-full flex-col bg-white shadow-xl sm:h-auto sm:max-w-lg sm:rounded-2xl">
+        <div className="flex items-center justify-between border-b border-border px-4 py-4 sm:border-none sm:px-6 sm:pb-0 sm:pt-6">
+          <h2 className="text-xl font-semibold text-slate-900">
+            {isEditMode ? 'Edit Task' : 'New Task'}
+          </h2>
+          <button
+            onClick={onClose}
+            className="rounded-full p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 sm:absolute sm:right-4 sm:top-4"
+            aria-label="Close modal"
+          >
+            <X className="h-5 w-5" aria-hidden="true" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6">
 
         {error ? (
           <div className="mb-4 rounded-lg bg-rose-50 p-3 text-sm text-rose-600">
@@ -147,7 +160,7 @@ export function TaskForm({ task, onClose, onSuccess }: TaskFormProps) {
             error={errors.dueDate?.message}
           />
 
-          <div className="mt-6 flex justify-end gap-3">
+          <div className="mt-6 flex justify-end gap-3 sm:pb-6">
             <Button type="button" variant="ghost" onClick={onClose}>
               Cancel
             </Button>
@@ -156,6 +169,7 @@ export function TaskForm({ task, onClose, onSuccess }: TaskFormProps) {
             </Button>
           </div>
         </form>
+        </div>
       </div>
     </div>
   )

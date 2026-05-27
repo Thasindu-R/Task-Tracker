@@ -49,16 +49,16 @@ export function DashboardStats({ stats, overdueTasks }: DashboardStatsProps) {
 
   return (
     <div className="space-y-8">
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {cards.map((card) => (
-          <div key={card.label} className="flex flex-col gap-3 rounded-xl border border-border bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${card.bgColor} ${card.color}`}>
-                <card.icon className="h-5 w-5" aria-hidden="true" />
+          <div key={card.label} className="flex flex-col gap-3 rounded-xl border border-border bg-white p-4 shadow-sm sm:p-5 overflow-hidden">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className={`flex h-8 w-8 sm:h-10 sm:w-10 flex-shrink-0 items-center justify-center rounded-lg ${card.bgColor} ${card.color}`}>
+                <card.icon className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
               </div>
-              <h3 className="text-sm font-medium text-slate-600">{card.label}</h3>
+              <h3 className="truncate text-xs font-medium text-slate-600 sm:text-sm">{card.label}</h3>
             </div>
-            <p className="text-3xl font-bold text-slate-900">{card.value}</p>
+            <p className="truncate text-2xl font-bold text-slate-900 sm:text-3xl">{card.value}</p>
           </div>
         ))}
       </div>

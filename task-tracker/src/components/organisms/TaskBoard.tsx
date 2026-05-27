@@ -20,13 +20,13 @@ export function TaskBoard({ tasks, onEdit, onDelete, onStatusChange }: TaskBoard
   const { user } = useAuth()
 
   return (
-    <div className="flex flex-col gap-6 md:flex-row md:items-start">
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-3 flex-1 min-h-0">
       {COLUMNS.map((status) => {
         const columnTasks = tasks.filter((t) => t.status === status)
 
         return (
-          <div key={status} className="flex-1 flex-col gap-4 flex min-w-[300px]">
-            <div className="flex items-center justify-between mb-2">
+          <div key={status} className="flex flex-col gap-4 bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+            <div className="flex items-center justify-between flex-shrink-0">
               <div className="flex items-center gap-2">
                 <span className={`rounded-full px-3 py-1 text-xs font-semibold border ${STATUS_STYLES[status]}`}>
                   {STATUS_LABELS[status]}
@@ -35,7 +35,7 @@ export function TaskBoard({ tasks, onEdit, onDelete, onStatusChange }: TaskBoard
               </div>
             </div>
 
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 overflow-y-auto flex-1 pr-1 pb-2">
               {columnTasks.length > 0 ? (
                 columnTasks.map((task) => (
                   <div key={task.id}>
