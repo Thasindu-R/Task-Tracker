@@ -42,7 +42,7 @@ async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
 }
 
 export function useTasksQuery(filters: TaskFilters) {
-  return useQuery({
+  return useQuery<Task[]>({
     queryKey: ['tasks', filters],
     queryFn: async () => {
       const params = new URLSearchParams()

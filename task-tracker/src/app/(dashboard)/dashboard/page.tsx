@@ -4,10 +4,11 @@ import { DashboardLayout } from '@/components/templates/DashboardLayout'
 import { DashboardStats } from '@/components/organisms/DashboardStats'
 import { TaskCard } from '@/components/molecules/TaskCard'
 import { useTasksQuery } from '@/hooks/useTasks'
+import type { Task } from '@/types'
 
 export default function DashboardPage() {
   const { data } = useTasksQuery({ sortBy: 'createdAt', sortOrder: 'desc' })
-  const recentTasks = (data ?? []).slice(0, 3)
+  const recentTasks: Task[] = (data ?? []).slice(0, 3)
 
   return (
     <DashboardLayout>
