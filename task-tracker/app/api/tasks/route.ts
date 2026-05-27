@@ -13,7 +13,7 @@ const taskSchema = z.object({
 
 export async function GET() {
   try {
-    const supabase = createServerClient()
+    const supabase = await createServerClient()
     const { data: { user } } = await supabase.auth.getUser()
     
     if (!user) {
@@ -34,7 +34,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createServerClient()
+    const supabase = await createServerClient()
     const { data: { user } } = await supabase.auth.getUser()
     
     if (!user) {

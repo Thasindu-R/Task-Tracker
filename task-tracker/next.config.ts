@@ -4,6 +4,9 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseHost = supabaseUrl ? new URL(supabaseUrl).hostname : undefined
 
 const nextConfig: NextConfig = {
+  turbopack: {
+    root: import.meta.dirname,
+  },
   images: {
     remotePatterns: supabaseHost
       ? [
